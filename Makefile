@@ -43,9 +43,10 @@ endif
 CFLAGS     += $(OPTIMIZE) $(INCLUDE) -std=gnu99 -Wall -Wextra -Werror
 LDFLAGS    += $(LIBS)
 CLEANED     = $(OBJECTS) $(TARGET)
+INSTALL_PATH	?= /usr/local
 dir_guard   = @mkdir -p $(@D)
 
-.PHONY: all clean rebuild
+.PHONY: all clean rebuild install uninstall
 
 all: $(OBJECTS) $(TARGET)
 
@@ -62,5 +63,10 @@ clean:
 rebuild:
 	make clean
 	make all
+
+install: $(TARGET)
+	install	$(TARGET) $(INSTALL_PATH)/bin
+uninstall:
+	install	/dev/null $(INSTALL_PATH)/bin/$(TARGET)
 
 obj/emu/cpu/new/v30mz.o: src/emu/cpu/new/v30mz.c src/emu/cpu/new/v30mz.h src/emu/cpu/new/mem.inc.c src/emu/cpu/new/irq.inc.c src/emu/cpu/new/exec.inc.c
