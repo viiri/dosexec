@@ -83,6 +83,26 @@ static BOOL prv_int21_2Cxx(uint8 irq_num, uint16 aw)
   return TRUE;
 }
 
+static BOOL prv_int21_3Bxx(uint8 irq_num, uint16 aw)
+{
+  (void)irq_num;
+  (void)aw;
+
+  uint16 ds, dw;
+  ds = cpu_get_reg(CPU_REG_DS);
+  dw = cpu_get_reg(CPU_REG_DW);
+  char *buf = bios_read_asciz(ds, dw);
+  dbgcprint("chdir(%s)\n", buf);
+  if(chdir(buf) == 0) {
+    bios_ret(DOSERR_NONE);
+  }else{
+    perror("chdir");
+    bios_ret(DOSERR_BAD_FUNC_NUM);
+  }
+  free(buf);
+  return TRUE;
+}
+
 static BOOL prv_int21_3Cxx_3Dxx(uint8 irq_num, uint16 aw)
 {
   (void)irq_num;
@@ -246,6 +266,7 @@ static const BiosIrqHandler _irq21_handlers[256][257] = {
   [0x09] = { [0x100] = prv_int21_09xx, }, // DOS 1+ - Write string to stdout
   [0x2A] = { [0x100] = prv_int21_2Axx, }, // DOS 1+ - Get system date
   [0x2C] = { [0x100] = prv_int21_2Cxx, }, // DOS 1+ - Get system time
+  [0x3B] = { [0x100] = prv_int21_3Bxx, }, // DOS 2+ - Set current directory
   [0x3C] = { [0x100] = prv_int21_3Cxx_3Dxx, }, // DOS 2+ - Create or truncate file
   [0x3D] = { [0x100] = prv_int21_3Cxx_3Dxx, }, // DOS 2+ - Open existing file
   [0x3E] = { [0x100] = prv_int21_3Exx, }, // DOS 2+ - Close file

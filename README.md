@@ -19,7 +19,7 @@ Email is <trap15@raidenii.net> as usual.
 # Supported BIOS routines
 
 - INT 21h
-    - AH= 02h, 09h, 2Ah, 2Ch, 3Ch, 3Eh, 3Fh, 40h, 48h, 49h, 4Ah, 4Ch
+    - AH= 02h, 09h, 2Ah, 2Ch, 3Bh, 3Ch, 3Eh, 3Fh, 40h, 48h, 49h, 4Ah, 4Ch
 
 Yes that's really it. They're not even well implemented.
 
