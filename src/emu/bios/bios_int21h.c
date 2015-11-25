@@ -203,7 +203,7 @@ static BOOL prv_int21_48xx(uint8 irq_num, uint16 aw)
   uint16 para;
   uint16 size = cpu_get_reg(CPU_REG_BW);
 
-  dbgcprint("Alloc memory %04X\n", size);
+  dbgcprint("malloc(%04X)\n", size);
   if(bios_ret(bios_mem_alloc(size, &para))) {
     cpu_set_reg(CPU_REG_AW, para);
   }
@@ -215,7 +215,7 @@ static BOOL prv_int21_49xx(uint8 irq_num, uint16 aw)
   (void)irq_num;
   (void)aw;
 
-  dbgcprint("Free memory %04X\n", cpu_get_reg(CPU_REG_ES));
+  dbgcprint("free(%04X)\n", cpu_get_reg(CPU_REG_ES));
   bios_ret(bios_mem_free(cpu_get_reg(CPU_REG_ES)));
 
   return TRUE;
@@ -227,7 +227,7 @@ static BOOL prv_int21_4Axx(uint8 irq_num, uint16 aw)
   (void)aw;
   uint16 para = cpu_get_reg(CPU_REG_ES);
   uint16 size = cpu_get_reg(CPU_REG_BW);
-  dbgcprint("Resize memory %04X to %04X\n", para, size);
+  dbgcprint("memresize(ptr=%04X, size=%04X)\n", para, size);
   bios_ret(bios_mem_resize(size, para));
   return TRUE;
 }

@@ -51,7 +51,7 @@ static BOOL prv_load_file(const char *fn, uint16 *size, uint16 *para)
 
   *size = len + 0x100;
   if(bios_mem_alloc((*size + 0xF) >> 4, para)) {
-    printf("Can't alloc code\n");
+    fprintf(stderr, "Can't alloc code\n");
     return FALSE;
   }
 
@@ -82,12 +82,12 @@ void load_program(int argc, const char *argv[])
   prv_load_file(prg, &prglen, &codeseg);
   pspseg = codeseg;
   if(bios_mem_alloc((env_len + 0xF) >> 4, &envseg)) {
-    printf("Can't alloc ENV\n");
+    fprintf(stderr, "Can't alloc ENV\n");
   }
 
-  printf("CODE:%04X(%04X)\n", codeseg, prglen);
-  printf("PSP :%04X\n", pspseg);
-  printf("ENV :%04X\n", envseg);
+  dbgprint("CODE:%04X(%04X)\n", codeseg, prglen);
+  dbgprint("PSP :%04X\n", pspseg);
+  dbgprint("ENV :%04X\n", envseg);
 
   // Set the environment
   bios_w8(envseg,0x00, env[0]); // empty~
@@ -104,21 +104,21 @@ void load_program(int argc, const char *argv[])
   bios_w8 (pspseg,0x52, 0xCB); // RETF
 
   size_t arglen = 0;
-  printf("argstr: '");
+  dbgprint("argstr: '");
   for(i = 0; i < argc; i++) {
     bios_w8(pspseg,0x81+arglen, ' ');
-    printf(" ");
+    dbgprint(" ");
     arglen++;
 
     const char *ptr = argv[i];
     while(*ptr) {
       bios_w8(pspseg,0x81+arglen, *ptr);
-      printf("%c", *ptr);
+      dbgprint("%c", *ptr);
       ptr++;
       arglen++;
     }
   }
-  printf("', %zu chars\n", arglen);
+  dbgprint("', %zu chars\n", arglen);
   bios_w8(pspseg,0x81+arglen, 0x0D);
   bios_w8(pspseg,0x80, arglen);
 

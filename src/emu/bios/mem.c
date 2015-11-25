@@ -18,16 +18,6 @@ struct MemNode {
 
 static MemNode *s_nodes = NULL;
 
-static void prv_debug(const char *hdr) {
-  return;
-  MemNode *node = s_nodes;
-  printf("[%s]\n", hdr);
-  for(node = s_nodes; node != NULL; node = node->next) {
-    printf("Node @ 0x%04X, %sin use, 0x%04zX paragraphs\n", node->para, node->in_use ? "" : "not ", node->size);
-  }
-  printf("[/%s]\n", hdr);
-}
-
 static BOOL prv_alloc(MemNode *entry, size_t size) {
   MemNode *newent = NULL;
   if(size < entry->size) {
@@ -48,7 +38,6 @@ static BOOL prv_alloc(MemNode *entry, size_t size) {
 }
 
 static void prv_condense_list(void) {
-  prv_debug("pre condense");
   MemNode *list, *next;
   for(list = s_nodes; list->next != NULL; list = next) {
     next = list->next;
@@ -63,7 +52,6 @@ static void prv_condense_list(void) {
       next = list;
     }
   }
-  prv_debug("post condense");
 }
 
 void bios_mem_init(void) {
@@ -97,7 +85,6 @@ uint8 bios_mem_alloc(uint16 size, uint16 *ptr) {
       }
     }
   }
-  prv_debug("post alloc");
   if(list == NULL) {
     return DOSERR_OUT_OF_MEMORY;
   }
@@ -122,8 +109,6 @@ uint8 bios_mem_free(uint16 para) {
     return DOSERR_MBA_INVALID;
 
   list->in_use = FALSE;
-
-  prv_debug("post free");
   return DOSERR_NONE;
 }
 
@@ -145,9 +130,8 @@ uint8 bios_mem_resize(uint16 size, uint16 para) {
     list->next->size -= size_diff;
     list->next->para += size_diff;
   }else if(size_diff < 0) {
-    dbgprint("Resize shrink currently unsupported!!!\n");
+    fprintf(stderr, "DOSEXEC: Resize shrink currently unsupported!!!\n");
   }
   list->size = size;
-  prv_debug("post resize");
   return DOSERR_NONE;
 }
