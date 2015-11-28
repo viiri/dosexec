@@ -35,7 +35,6 @@ enum {
 };
 
 typedef struct {
-  int32 cycles;
   int bus_owned;
   BOOL halted;
 
@@ -92,8 +91,6 @@ typedef struct {
     uint16 ip;
   } reg;
   struct {
-    int cycles;
-
     uint8 modrm;
     uint32 src0,src1,dst;
 

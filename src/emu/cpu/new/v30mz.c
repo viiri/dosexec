@@ -82,7 +82,6 @@ void cpu_init(void)
 }
 void cpu_reset(void)
 {
-  _cpu.cycles = 0;
   _cpu.halted = FALSE;
   _cpu.bus_owned = 0;
 
@@ -114,8 +113,6 @@ void cpu_finish(void)
 
 int cpu_cycle(void)
 {
-  int cyc = 0;
-
   if(_cpu.pfx_reset)
     _cpu.segpfx = -1;
 
@@ -132,25 +129,20 @@ int cpu_cycle(void)
   _cpu.exec.ea_seg = -1;
 
   _cpu.insn = cpu_fetch8();
-  cyc += cpu_exec();
+  cpu_exec();
 
-  return cyc;
+  return 0;
 }
 
 void cpu_update(int32 cycles)
 {
-  _cpu.cycles += cycles;
-  while(_cpu.cycles >= 1) {
-    if(_cpu.halted && cpu_has_irq() == 0) {
-      _cpu.cycles = 0;
-      break;
-    }
+  (void)cycles;
+  for(;;) {
     if(_cpu.bus_owned) {
-      _cpu.cycles = 0;
       break;
     }
     //cpu_regdump();
-    _cpu.cycles -= cpu_cycle();
+    cpu_cycle();
   }
 }
 

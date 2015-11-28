@@ -1,7 +1,7 @@
 #define INFLOOP_HALT 1
 
 #define OP(CODE,NAME,CYC) \
-case CODE: _cpu.exec.cycles += (CYC)-1;
+case CODE:
 
 #define OP_END() break
 
@@ -10,7 +10,6 @@ case CODE: _cpu.exec.cycles += (CYC)-1;
 CPUHELPER void cpue_fault(uint8 vec)
 {
   _cpu.reg.ip = _cpu.fault_ip;
-  _cpu.exec.cycles += 25;
   cpu_interrupt(vec);
 }
 
@@ -24,8 +23,6 @@ CPUHELPER void cpue_modrm_get_ea(void)
     _cpu.exec.ea_seg = -1;
     return;
   }
-  if((_cpu.exec.modrm & 4) == 0)
-    _cpu.exec.cycles += 1;
   switch(_cpu.exec.modrm & 0x7) {
     case 0: ea += _cpu.reg.bw + _cpu.reg.ix; seg = SREG_DS; break;
     case 1: ea += _cpu.reg.bw + _cpu.reg.iy; seg = SREG_DS; break;
@@ -479,22 +476,15 @@ CPUHELPER void cpue_i_jmp(BOOL cond)
 {
   if(!cond) return;
   _cpu.reg.ip += _cpu.exec.src0;
-  _cpu.exec.cycles += 3;
-  if(_cpu.reg.ip & 1)
-    _cpu.exec.cycles += 1;
 }
 CPUHELPER void cpue_i_jmpf(void)
 {
   _cpu.reg.ip = _cpu.exec.src0;
   _cpu.reg.cs = _cpu.exec.src1;
-  if(_cpu.reg.ip & 1)
-    _cpu.exec.cycles += 1;
 }
 CPUHELPER void cpue_i_jmpn(void)
 {
   _cpu.reg.ip += (int16)_cpu.exec.src0;
-  if(_cpu.reg.ip & 1)
-    _cpu.exec.cycles += 1;
 }
 CPUHELPER void cpue_i_jmps(void)
 {
@@ -503,29 +493,19 @@ CPUHELPER void cpue_i_jmps(void)
     _cpu.halted = TRUE;
 #endif
   _cpu.reg.ip += _cpu.exec.src0;
-  if(_cpu.reg.ip & 1)
-    _cpu.exec.cycles += 1;
 }
 CPUHELPER void cpue_i_loop(BOOL cond, BOOL is_cond)
 {
+  (void)is_cond;
   _cpu.reg.cw--;
   if(cond && _cpu.reg.cw != 0) {
-    if(is_cond)
-      _cpu.exec.cycles += 3;
     _cpu.reg.ip += _cpu.exec.src0;
-    if(_cpu.reg.ip & 1)
-      _cpu.exec.cycles += 1;
   }
-  if(!is_cond)
-    _cpu.exec.cycles += 3;
 }
 CPUHELPER void cpue_i_jcxz(void)
 {
   if(_cpu.reg.cw == 0) {
-    _cpu.exec.cycles += 3;
     _cpu.reg.ip += _cpu.exec.src0;
-    if(_cpu.reg.ip & 1)
-      _cpu.exec.cycles += 1;
   }
 }
 CPUHELPER void cpue_i_read8(int seg)
@@ -574,25 +554,16 @@ CPUHELPER void cpue_i_callf(void)
   cpu_push(_cpu.reg.ip);
   _cpu.reg.ip = _cpu.exec.src0;
   _cpu.reg.cs = _cpu.exec.src1;
-  /* TODO: Does this apply on calls? */
-  if(_cpu.reg.ip & 1)
-    _cpu.exec.cycles += 1;
 }
 CPUHELPER void cpue_i_calln(void)
 {
   cpu_push(_cpu.reg.ip);
   _cpu.reg.ip += (int16)_cpu.exec.src0;
-  /* TODO: Does this apply on calls? */
-  if(_cpu.reg.ip & 1)
-    _cpu.exec.cycles += 1;
 }
 CPUHELPER void cpue_i_call(void)
 {
   cpu_push(_cpu.reg.ip);
   _cpu.reg.ip = _cpu.exec.src0;
-  /* TODO: Does this apply on calls? */
-  if(_cpu.reg.ip & 1)
-    _cpu.exec.cycles += 1;
 }
 CPUHELPER void cpue_i_sahf(void)
 {
@@ -713,9 +684,6 @@ CPUHELPER void cpue_i_ret(BOOL do_pop)
   if(do_pop) {
     _cpu.reg.sp += _cpu.exec.src0;
   }
-  /* TODO: Does this apply on returns? */
-  if(_cpu.reg.ip & 1)
-    _cpu.exec.cycles += 1;
 }
 CPUHELPER void cpue_i_enter(void)
 {
@@ -729,10 +697,8 @@ CPUHELPER void cpue_i_enter(void)
   for(i = 1; i < _cpu.exec.src1; i++) {
     data = cpu_memr16(SegAddr(SegDefault(SREG_SS), _cpu.reg.bp - i*2));
     cpu_push(data);
-    _cpu.exec.cycles += 4;
   }
   if(_cpu.exec.src1) {
-    _cpu.exec.cycles += 6 + ((_cpu.exec.src1 > 1) ? 1 : 0);
     cpu_push(_cpu.reg.bp);
   }
 }
@@ -748,9 +714,6 @@ CPUHELPER void cpue_i_retf(BOOL do_pop)
   if(do_pop) {
     _cpu.reg.sp += _cpu.exec.src0;
   }
-  /* TODO: Does this apply on returns? */
-  if(_cpu.reg.ip & 1)
-    _cpu.exec.cycles += 1;
 }
 CPUHELPER void cpue_i_int(void)
 {
@@ -760,7 +723,6 @@ CPUHELPER void cpue_i_into(void)
 {
   if(_cpu.psw.v) {
     _cpu.exec.src0 = INTVEC_BRKV;
-    _cpu.exec.cycles += 7;
     cpue_i_int();
   }
 }
@@ -812,7 +774,6 @@ CPUHELPER uint8 cpue_rep_pfxs(void)
       case 0x3E:/*DS:*/ cpue_i_segpfx(SREG_DS); break;
       default: return next;
     }
-    _cpu.exec.cycles += 1;
   }
   return 0; /* not valid, so it'll kick out of rep */
 }
@@ -846,20 +807,20 @@ CPUHELPER void cpue_i_rep(BOOL is_z)
   _cpu.rep_zflag = is_z;
   while(_cpu.reg.cw != 0 && _cpu.rep_zflag == is_z) {
     switch(next) {
-      case 0x6C: cpue_i_insb(); _cpu.exec.cycles += 6; break;
-      case 0x6D: cpue_i_insw(); _cpu.exec.cycles += 6; break;
-      case 0x6E: cpue_i_outsb(); _cpu.exec.cycles += 6; break;
-      case 0x6F: cpue_i_outsw(); _cpu.exec.cycles += 6; break;
-      case 0xA4: cpue_i_movsb(); _cpu.exec.cycles += 7; break;
-      case 0xA5: cpue_i_movsw(); _cpu.exec.cycles += 7; break;
-      case 0xA6: cpue_i_cmpsb(); _cpu.exec.cycles += cmpc; break;
-      case 0xA7: cpue_i_cmpsw(); _cpu.exec.cycles += cmpc; break;
-      case 0xAA: cpue_i_stosb(); _cpu.exec.cycles += 6; break;
-      case 0xAB: cpue_i_stosw(); _cpu.exec.cycles += 6; break;
-      case 0xAC: cpue_i_lodsb(); _cpu.exec.cycles += 6; break;
-      case 0xAD: cpue_i_lodsw(); _cpu.exec.cycles += 6; break;
-      case 0xAE: cpue_i_scasb(); _cpu.exec.cycles += 9; break;
-      case 0xAF: cpue_i_scasw(); _cpu.exec.cycles += 9; break;
+      case 0x6C: cpue_i_insb(); break;
+      case 0x6D: cpue_i_insw(); break;
+      case 0x6E: cpue_i_outsb(); break;
+      case 0x6F: cpue_i_outsw(); break;
+      case 0xA4: cpue_i_movsb(); break;
+      case 0xA5: cpue_i_movsw(); break;
+      case 0xA6: cpue_i_cmpsb(); break;
+      case 0xA7: cpue_i_cmpsw(); break;
+      case 0xAA: cpue_i_stosb(); break;
+      case 0xAB: cpue_i_stosw(); break;
+      case 0xAC: cpue_i_lodsb(); break;
+      case 0xAD: cpue_i_lodsw(); break;
+      case 0xAE: cpue_i_scasb(); break;
+      case 0xAF: cpue_i_scasw(); break;
     }
     _cpu.reg.cw--;
   }
@@ -1169,22 +1130,18 @@ CPUHELPER void cpue_i_grp3_8(void)
       break;
     case 3: /* NEG */
       cpue_i_neg(FALSE);
-      _cpu.exec.cycles += 2;
       break;
     case 4: /* MUL */
       _cpu.reg.aw = (uint16)(_cpu.exec.src0 * _cpu.reg.al);
       _cpu.psw.cy = _cpu.psw.v = _cpu.reg.ah ? 1 : 0;
       /* TODO: Undefined flags: S P Z AC */
-      _cpu.exec.cycles += 2;
       break;
     case 5: /* IMUL */
       _cpu.reg.aw = ((int16)(int8)_cpu.exec.src0) * ((int16)(int8)_cpu.reg.al);
       _cpu.psw.cy = _cpu.psw.v = _cpu.reg.ah ? 1 : 0;
       /* TODO: Undefined flags: S P Z AC */
-      _cpu.exec.cycles += 2;
       break;
     case 6: /* DIV */
-      _cpu.exec.cycles += 15;
       if(_cpu.exec.src0 == 0) {
         cpue_fault(INTVEC_DIVERR);
         break;
@@ -1198,7 +1155,6 @@ CPUHELPER void cpue_i_grp3_8(void)
       _cpu.reg.al = _cpu.exec.dst;
       break;
     case 7: /* IDIV */
-      _cpu.exec.cycles += 17;
       if(_cpu.exec.src0 == 0) {
         cpue_fault(INTVEC_DIVERR);
         break;
@@ -1231,7 +1187,6 @@ CPUHELPER void cpue_i_grp3_16(void)
       break;
     case 3: /* NEG */
       cpue_i_neg(TRUE);
-      _cpu.exec.cycles += 2;
       break;
     case 4: /* MUL */
       _cpu.exec.dst = _cpu.exec.src0 * _cpu.reg.aw;
@@ -1239,7 +1194,6 @@ CPUHELPER void cpue_i_grp3_16(void)
       _cpu.reg.dw = (_cpu.exec.dst >> 16) & 0xFFFF;
       _cpu.psw.cy = _cpu.psw.v = _cpu.reg.dw ? 1 : 0;
       /* TODO: Undefined flags: S P Z AC */
-      _cpu.exec.cycles += 2;
       break;
     case 5: /* IMUL */
       _cpu.exec.dst = ((int32)(int16)_cpu.exec.src0) * ((int32)(int16)_cpu.reg.aw);
@@ -1247,10 +1201,8 @@ CPUHELPER void cpue_i_grp3_16(void)
       _cpu.reg.dw = (_cpu.exec.dst >> 16) & 0xFFFF;
       _cpu.psw.cy = _cpu.psw.v = _cpu.reg.dw ? 1 : 0;
       /* TODO: Undefined flags: S P Z AC */
-      _cpu.exec.cycles += 2;
       break;
     case 6: /* DIV */
-      _cpu.exec.cycles += 23;
       if(_cpu.exec.src0 == 0) {
         cpue_fault(INTVEC_DIVERR);
         break;
@@ -1265,7 +1217,6 @@ CPUHELPER void cpue_i_grp3_16(void)
       _cpu.reg.aw = _cpu.exec.dst;
       break;
     case 7: /* IDIV */
-      _cpu.exec.cycles += 24;
       if(_cpu.exec.src0 == 0) {
         cpue_fault(INTVEC_DIVERR);
         break;
@@ -1289,44 +1240,34 @@ CPUHELPER void cpue_i_grp4_8(void)
   switch((_cpu.exec.modrm >> 3) & 7) {
     case 0: /* inc */
       cpue_i_inc8();
-      _cpu.exec.cycles += 2;
       break;
     case 1: /* dec */
       cpue_i_dec8();
-      _cpu.exec.cycles += 2;
       break;
     case 2: /* call */
       logerr_pc("Unknown opcode grp4_8 op2\n");
       cpue_i_call();
-      _cpu.exec.cycles += 5;
       break;
     case 3: /* call Mp */
       logerr_pc("Unknown opcode grp4_8 op3\n");
       _cpu.exec.src1 = cpue_modrm_get_rmb(1);
       cpue_i_callf();
-      _cpu.exec.cycles += 11;
       break;
     case 4: /* jmp */
       logerr_pc("Unknown opcode grp4_8 op4\n");
       _cpu.reg.ip = _cpu.exec.src0;
-      _cpu.exec.cycles += 4;
-      if(_cpu.reg.ip & 1)
-        _cpu.exec.cycles += 1;
       break;
     case 5: /* jmp Mp */
       logerr_pc("Unknown opcode grp4_8 op5\n");
       _cpu.exec.src1 = cpue_modrm_get_rmb(1);
-      _cpu.exec.cycles += 9;
       cpue_i_jmpf();
       break;
     case 6: /* push */
       logerr_pc("Unknown opcode grp4_8 op6\n");
-      _cpu.exec.cycles += 1;
       cpue_i_push();
       break;
     case 7: /* pop?? */
       logerr_pc("Unknown opcode grp4_8 op7\n");
-      _cpu.exec.cycles += 1;
       break;
   }
   if(((_cpu.exec.modrm >> 3) & 6) == 0) {
@@ -1338,40 +1279,30 @@ CPUHELPER void cpue_i_grp4_16(void)
   switch((_cpu.exec.modrm >> 3) & 7) {
     case 0: /* inc */
       cpue_i_inc16();
-      _cpu.exec.cycles += 2;
       break;
     case 1: /* dec */
       cpue_i_dec16();
-      _cpu.exec.cycles += 2;
       break;
     case 2: /* call */
       cpue_i_call();
-      _cpu.exec.cycles += 5;
       break;
     case 3: /* call Mp */
       /* TODO: Need to actually push before reading destination */
       _cpu.exec.src1 = cpue_modrm_get_rmw(2);
       cpue_i_callf();
-      _cpu.exec.cycles += 11;
       break;
     case 4: /* jmp */
       _cpu.reg.ip = _cpu.exec.src0;
-      _cpu.exec.cycles += 4;
-      if(_cpu.reg.ip & 1)
-        _cpu.exec.cycles += 1;
       break;
     case 5: /* jmp Mp */
       _cpu.exec.src1 = cpue_modrm_get_rmw(2);
-      _cpu.exec.cycles += 9;
       cpue_i_jmpf();
       break;
     case 6: /* push */
       cpue_i_push();
-      _cpu.exec.cycles += 1;
       break;
     case 7: /* pop?? */
       logerr_pc("Unknown opcode grp4_16 op7\n");
-      _cpu.exec.cycles += 1;
       break;
   }
   if(((_cpu.exec.modrm >> 3) & 6) == 0) {
@@ -1408,8 +1339,6 @@ CPUHELPER void cpue_i_bound(void)
  */
 int cpu_exec(void)
 {
-  _cpu.exec.cycles = 0;
-
   switch(_cpu.insn) {
 OP(0x00,add8_E_G    ,1) { cpue_modrm_r8_mem_reg();    cpue_i_add8(0);  cpue_modrm_set_rmb(0,_cpu.exec.dst); } OP_END();
 OP(0x01,add16_E_G   ,1) { cpue_modrm_r16_mem_reg();   cpue_i_add16(0); cpue_modrm_set_rmw(0,_cpu.exec.dst); } OP_END();
@@ -1706,5 +1635,5 @@ OP(0xFF,grp4_16_E   ,1) { cpue_modrmEw(); cpue_i_grp4_16(); } OP_END();
       logerr_pc("Unhandled opcode [%02X]\n", _cpu.insn);
       break;
   }
-  return _cpu.exec.cycles;
+  return 0;
 }

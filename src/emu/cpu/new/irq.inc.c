@@ -43,7 +43,6 @@ void cpu_handle_irq(void)
 {
   _cpu.irq = 0;
 
-  _cpu.exec.cycles += 32;
   cpu_interrupt(0/*soc_get_next_irq()*/);
 }
 
