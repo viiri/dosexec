@@ -4,6 +4,7 @@
 typedef struct {
   BOOL running;
   uint8 ret_code;
+  uint16 internal_seg;
 } dosexec_bios_t;
 
 extern dosexec_bios_t _bios;

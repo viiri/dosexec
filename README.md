@@ -19,15 +19,37 @@ Email is <trap15@raidenii.net> as usual.
 # Supported BIOS routines
 
 - INT 21h
-    - AH= 02h, 09h, 2Ah, 2Ch, 3Bh, 3Ch, 3Eh, 3Fh, 40h, 48h, 49h, 4Ah, 4Ch
+    - AH=02h
+    - AH=09h
+    - AH=25h (not really)
+    - AH=2Ah 
+    - AH=2Ch
+    - AH=30h
+    - AH=35h (not really)
+    - AH=3Bh
+    - AH=3Ch
+    - AH=3Dh
+    - AH=3Eh
+    - AH=3Fh
+    - AH=40h
+    - AH=42h
+    - AX=4300h (not really)
+    - AX=4400h (not really)
+    - AH=48h
+    - AH=49h
+    - AH=4Ah
+    - AH=4Ch
 
 Yes that's really it. They're not even well implemented.
+
+There is stuff in place to make stuff sorta work even if the routine's not
+actually implemented, but who knows.
 
 # Using
 
 It takes no command line parameters (though it really probably should). Some
-stuff might get logged out to a `log.txt`, sorry about that. You might be able
-to turn it off if you try hard.
+stuff might get logged out to a `log.txt`, sorry about that. You can turn it
+off if you poke the two values at the top of src/core/util.c.
 
 Simply: `./dosexec DOSPRO~1.COM /switch donger whoosit`
 

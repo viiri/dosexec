@@ -13,6 +13,10 @@ OBJECTS    += obj/emu/emu.o \
 OBJECTS    += obj/emu/bios/bios.o \
 		obj/emu/bios/mem.o \
 		obj/emu/bios/bios_int21h.o
+# Program loader
+OBJECTS    += obj/emu/loader/loader.o \
+		obj/emu/loader/com.o \
+		obj/emu/loader/mz.o
 # CPU core
 OBJECTS  += obj/emu/cpu/new/v30mz.o
 

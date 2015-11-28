@@ -74,7 +74,7 @@ CPUHELPER uint8 cpue_modrm_get_rmb(uint16 offset)
 {
   if(_cpu.exec.modrm >= 0xC0) {
     if(offset != 0) {
-      dbgcprint("GetRMB w/ offset on register ModRM\n");
+      logwarn_pc("GetRMB w/ offset on register ModRM\n");
     }
     return _cpu.reg.r8[_cpu_modrm_rmb[_cpu.exec.modrm]];
   }else{
@@ -86,7 +86,7 @@ CPUHELPER uint16 cpue_modrm_get_rmw(uint16 offset)
 {
   if(_cpu.exec.modrm >= 0xC0) {
     if(offset != 0) {
-      dbgcprint("GetRMW w/ offset on register ModRM\n");
+      logwarn_pc("GetRMW w/ offset on register ModRM\n");
     }
     return _cpu.reg.r16[_cpu_modrm_rmw[_cpu.exec.modrm]];
   }else{
@@ -98,7 +98,7 @@ CPUHELPER void cpue_modrm_set_rmb(uint16 offset, uint8 val)
 {
   if(_cpu.exec.modrm >= 0xC0) {
     if(offset != 0) {
-      dbgcprint("SetRMB w/ offset on register ModRM\n");
+      logwarn_pc("SetRMB w/ offset on register ModRM\n");
     }
     _cpu.reg.r8[_cpu_modrm_rmb[_cpu.exec.modrm]] = val;
   }else{
@@ -110,7 +110,7 @@ CPUHELPER void cpue_modrm_set_rmw(uint16 offset, uint16 val)
 {
   if(_cpu.exec.modrm >= 0xC0) {
     if(offset != 0) {
-      dbgcprint("SetRMW w/ offset on register ModRM\n");
+      logwarn_pc("SetRMW w/ offset on register ModRM\n");
     }
     _cpu.reg.r16[_cpu_modrm_rmw[_cpu.exec.modrm]] = val;
   }else{
@@ -832,7 +832,7 @@ CPUHELPER void cpue_i_rep(BOOL is_z)
     case 0xAC: case 0xAD: case 0xAE: case 0xAF:
       break;
     default:
-//      dbgcprint("Invalid REP%s insn %02X\n", is_z?"Z":"NZ", next);
+      logwarn_pc("Invalid REP%s insn %02X\n", is_z?"Z":"NZ", next);
       _cpu.reg.ip--;
       _cpu.pfx_reset = FALSE;
       _cpu.was_prefix = TRUE;
@@ -975,7 +975,7 @@ CPUHELPER void cpue_i_grp2_8(void)
 {
   if(_cpu.exec.src1 == 0) {
     /* TODO */
-    //dbgcprint("Shift8 with 0 count\n");
+    logwarn_pc("Shift8 with 0 count\n");
   }
   uint i;
   BOOL newcy;
@@ -1032,7 +1032,7 @@ CPUHELPER void cpue_i_grp2_8(void)
       _cpu.psw.v = (_cpu.exec.src0 & 0x80) != (_cpu.exec.dst & 0x80);
       break;
     case 6: /* sal */
-      dbgcprint("grp2_8 SAL\n");
+      logwarn_pc("grp2_8 SAL\n");
       _cpu.psw.cy = (_cpu.exec.src0 << _cpu.exec.src1) & 0x100 ? TRUE : FALSE;
       _cpu.exec.dst = _cpu.exec.src0 << _cpu.exec.src1;
       cpue_flag_szp8(_cpu.exec.dst);
@@ -1060,7 +1060,7 @@ CPUHELPER void cpue_i_grp2_16(void)
 {
   if(_cpu.exec.src1 == 0) {
     /* TODO */
-    //dbgcprint("Shift16 with 0 count\n");
+    logwarn_pc("Shift16 with 0 count\n");
   }
   uint i;
   BOOL newcy;
@@ -1117,7 +1117,7 @@ CPUHELPER void cpue_i_grp2_16(void)
       _cpu.psw.v = (_cpu.exec.src0 & 0x8000) != (_cpu.exec.dst & 0x8000);
       break;
     case 6: /* sal */
-      dbgcprint("grp2_16 SAL\n");
+      logwarn_pc("grp2_16 SAL\n");
       _cpu.psw.cy = (_cpu.exec.src0 << _cpu.exec.src1) & 0x10000 ? TRUE : FALSE;
       _cpu.exec.dst = _cpu.exec.src0 << _cpu.exec.src1;
       cpue_flag_szp16(_cpu.exec.dst);
@@ -1162,7 +1162,7 @@ CPUHELPER void cpue_i_grp3_8(void)
       cpue_i_and8();
       break;
     case 1: /* unknown */
-      dbgcprint("Unknown opcode grp3_8 op1\n");
+      logerr_pc("Unknown opcode grp3_8 op1\n");
       break;
     case 2: /* NOT */
       _cpu.exec.dst = ~_cpu.exec.src0;
@@ -1224,7 +1224,7 @@ CPUHELPER void cpue_i_grp3_16(void)
       cpue_i_and16();
       break;
     case 1: /* unknown */
-      dbgcprint("Unknown opcode grp3_16 op1\n");
+      logerr_pc("Unknown opcode grp3_16 op1\n");
       break;
     case 2: /* NOT */
       _cpu.exec.dst = ~_cpu.exec.src0;
@@ -1296,36 +1296,36 @@ CPUHELPER void cpue_i_grp4_8(void)
       _cpu.exec.cycles += 2;
       break;
     case 2: /* call */
-      dbgcprint("Unknown opcode grp4_8 op2\n");
+      logerr_pc("Unknown opcode grp4_8 op2\n");
       cpue_i_call();
       _cpu.exec.cycles += 5;
       break;
     case 3: /* call Mp */
-      dbgcprint("Unknown opcode grp4_8 op3\n");
+      logerr_pc("Unknown opcode grp4_8 op3\n");
       _cpu.exec.src1 = cpue_modrm_get_rmb(1);
       cpue_i_callf();
       _cpu.exec.cycles += 11;
       break;
     case 4: /* jmp */
-      dbgcprint("Unknown opcode grp4_8 op4\n");
+      logerr_pc("Unknown opcode grp4_8 op4\n");
       _cpu.reg.ip = _cpu.exec.src0;
       _cpu.exec.cycles += 4;
       if(_cpu.reg.ip & 1)
         _cpu.exec.cycles += 1;
       break;
     case 5: /* jmp Mp */
-      dbgcprint("Unknown opcode grp4_8 op5\n");
+      logerr_pc("Unknown opcode grp4_8 op5\n");
       _cpu.exec.src1 = cpue_modrm_get_rmb(1);
       _cpu.exec.cycles += 9;
       cpue_i_jmpf();
       break;
     case 6: /* push */
-      dbgcprint("Unknown opcode grp4_8 op6\n");
+      logerr_pc("Unknown opcode grp4_8 op6\n");
       _cpu.exec.cycles += 1;
       cpue_i_push();
       break;
     case 7: /* pop?? */
-      dbgcprint("Unknown opcode grp4_8 op7\n");
+      logerr_pc("Unknown opcode grp4_8 op7\n");
       _cpu.exec.cycles += 1;
       break;
   }
@@ -1370,7 +1370,7 @@ CPUHELPER void cpue_i_grp4_16(void)
       _cpu.exec.cycles += 1;
       break;
     case 7: /* pop?? */
-      dbgcprint("Unknown opcode grp4_16 op7\n");
+      logerr_pc("Unknown opcode grp4_16 op7\n");
       _cpu.exec.cycles += 1;
       break;
   }
@@ -1563,17 +1563,17 @@ OP(0x8A,mov8_G_E    ,1) { cpue_modrm_get(); cpue_modrm_set_regb(cpue_modrm_get_r
 OP(0x8B,mov16_G_E   ,1) { cpue_modrm_get(); cpue_modrm_set_regw(cpue_modrm_get_rmw(0)); } OP_END();
 OP(0x8C,mov16_E_Seg ,1) { cpue_modrm_get(); cpue_modrm_set_rmw(0,_cpu.reg.sreg[(_cpu.exec.modrm >> 3) & 3]); _cpu.irq_disable = TRUE;
   if((_cpu.exec.modrm >> 3) & 4)
-    dbgcprint("Bad segment register [%d]\n", (_cpu.exec.modrm >> 3) & 7);
+    logerr_pc("Bad segment register [%d]\n", (_cpu.exec.modrm >> 3) & 7);
 } OP_END();
 OP(0x8D,lea_G_M     ,1) { cpue_modrm_get(); cpue_modrm_get_ea(); cpue_modrm_set_regw(_cpu.exec.ea);
   if(_cpu.exec.ea_seg == -1)
-    dbgcprint("Bad LEA ModR/M [%02X]\n", _cpu.exec.modrm);
+    logerr_pc("Bad LEA ModR/M [%02X]\n", _cpu.exec.modrm);
 } OP_END();
 OP(0x8E,mov16_Seg_E ,2) { cpue_modrm_get(); _cpu.reg.sreg[(_cpu.exec.modrm >> 3) & 3] = cpue_modrm_get_rmw(0);
   if(((_cpu.exec.modrm >> 3) & 3) == SREG_SS)
     _cpu.irq_disable = TRUE;
   if((_cpu.exec.modrm >> 3) & 4)
-    dbgcprint("Bad segment register [%d]\n", (_cpu.exec.modrm >> 3) & 7);
+    logerr_pc("Bad segment register [%d]\n", (_cpu.exec.modrm >> 3) & 7);
 } OP_END();
 OP(0x8F,pop_Ew      ,1) { cpue_modrm_get(); cpue_i_pop(); cpue_modrm_set_rmw(0,_cpu.exec.dst); } OP_END();
 
@@ -1589,7 +1589,7 @@ OP(0x97,xchg_rIY_rAW,3) { uint16 tmp = _cpu.reg.aw; _cpu.reg.aw = _cpu.reg.iy; _
 OP(0x98,cbw         ,1) { _cpu.reg.ah = (_cpu.reg.al & 0x80) ? 0xFF : 0; } OP_END();
 OP(0x99,cwd         ,1) { _cpu.reg.dw = (_cpu.reg.ah & 0x80) ? 0xFFFF : 0; } OP_END();
 OP(0x9A,call_Ap    ,10) { cpue_immfar(); cpue_i_callf(); } OP_END();
-OP(0x9B,wait        ,1) { dbgcprint("WAIT instruction\n"); } OP_END();
+OP(0x9B,wait        ,1) { logdbg_pc("WAIT instruction\n"); } OP_END();
 OP(0x9C,pushf       ,2) { cpue_i_pushf(); } OP_END();
 OP(0x9D,popf        ,3) { cpue_i_popf(); _cpu.irq_disable = TRUE; } OP_END();
 OP(0x9E,sahf        ,4) { cpue_i_sahf(); } OP_END();
@@ -1658,14 +1658,15 @@ OP(0xD5,aad8_I      ,6) { cpue_imm8(); cpue_i_aad(); } OP_END();
 OP(0xD7,xlat        ,5) { cpue_i_xlat(); _cpu.reg.al = _cpu.exec.dst; } OP_END();
 
 /* FPO1 instructions are handled as NOPs, according to manual */
-OP(0xD8,fpo1_D8     ,1) { dbgcprint("FPO1 D8 instruction\n"); } OP_END();
-OP(0xD9,fpo1_D9     ,1) { dbgcprint("FPO1 D9 instruction\n"); } OP_END();
-OP(0xDA,fpo1_DA     ,1) { dbgcprint("FPO1 DA instruction\n"); } OP_END();
-OP(0xDB,fpo1_DB     ,1) { dbgcprint("FPO1 DB instruction\n"); } OP_END();
-OP(0xDC,fpo1_DC     ,1) { dbgcprint("FPO1 DC instruction\n"); } OP_END();
-OP(0xDD,fpo1_DD     ,1) { dbgcprint("FPO1 DD instruction\n"); } OP_END();
-OP(0xDE,fpo1_DE     ,1) { dbgcprint("FPO1 DE instruction\n"); } OP_END();
-OP(0xDF,fpo1_DF     ,1) { dbgcprint("FPO1 DF instruction\n"); } OP_END();
+// HACK!!
+OP(0xD8,fpo1_D8     ,1) { cpu_fetch8(); } OP_END();
+OP(0xD9,fpo1_D9     ,1) { cpu_fetch8(); } OP_END();
+OP(0xDA,fpo1_DA     ,1) { cpu_fetch8(); } OP_END();
+OP(0xDB,fpo1_DB     ,1) { cpu_fetch8(); } OP_END();
+OP(0xDC,fpo1_DC     ,1) { cpu_fetch8(); } OP_END();
+OP(0xDD,fpo1_DD     ,1) { cpu_fetch8(); cpu_fetch16(); } OP_END();
+OP(0xDE,fpo1_DE     ,1) { cpu_fetch8(); } OP_END();
+OP(0xDF,fpo1_DF     ,1) { cpu_fetch8(); } OP_END();
 
 OP(0xE0,loopnz      ,3) { cpue_imm8s(); cpue_i_loop(!_cpu.psw.z,TRUE); } OP_END();
 OP(0xE1,loopz       ,3) { cpue_imm8s(); cpue_i_loop( _cpu.psw.z,TRUE); } OP_END();
@@ -1685,7 +1686,7 @@ OP(0xED,in16_rAW_rDW,6) { _cpu.exec.src0 = _cpu.reg.dw; cpue_i_in16(); _cpu.reg.
 OP(0xEE,out8_rDW_rAL,6) { _cpu.exec.src0 = _cpu.reg.dw; _cpu.exec.src1 = _cpu.reg.al; cpue_i_out8(); } OP_END();
 OP(0xEF,out16_rDW_rAW,6){ _cpu.exec.src0 = _cpu.reg.dw; _cpu.exec.src1 = _cpu.reg.aw; cpue_i_out16(); } OP_END();
 
-OP(0xF0,lock        ,1) { dbgcprint("LOCK prefix\n"); _cpu.irq_disable = TRUE; } OP_END();
+OP(0xF0,lock        ,1) { loginfo_pc("LOCK prefix\n"); _cpu.irq_disable = TRUE; } OP_END();
 OP(0xF2,repnz       ,5) { cpue_i_rep(FALSE); } OP_END();
 OP(0xF3,repz        ,5) { cpue_i_rep(TRUE); } OP_END();
 OP(0xF4,hlt         ,9) { cpue_i_halt(); } OP_END();
@@ -1702,7 +1703,7 @@ OP(0xFD,std         ,4) { _cpu.psw.dir= TRUE; } OP_END();
 OP(0xFE,grp4_8_E    ,1) { cpue_modrmEb(); cpue_i_grp4_8(); } OP_END();
 OP(0xFF,grp4_16_E   ,1) { cpue_modrmEw(); cpue_i_grp4_16(); } OP_END();
     default:
-      dbgcprint("Unhandled opcode [%02X]\n", _cpu.insn);
+      logerr_pc("Unhandled opcode [%02X]\n", _cpu.insn);
       break;
   }
   return _cpu.exec.cycles;

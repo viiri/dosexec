@@ -1,5 +1,6 @@
 #include "sys.h"
 /*--- Core includes ---*/
+#include "core/lptr.h"
 #include "core/util.h"
 /*--- Emu includes ---*/
 #include "emu/bios/bios.h"
@@ -10,23 +11,21 @@
 
 dosexec_bios_t _bios;
 
-#define SPTR2FLAT(S,P) (((S) << 4) + ((P) & 0xFFFF))
-
 uint8 bios_r8(uint16 seg, uint16 ptr) {
-  return mem_r8(SPTR2FLAT(seg, ptr), NULL);
+  return mem_r8(LPTR2FLAT(seg, ptr), NULL);
 }
 uint16 bios_r16(uint16 seg, uint16 ptr) {
-  return mem_r16(SPTR2FLAT(seg, ptr), NULL);
+  return mem_r16(LPTR2FLAT(seg, ptr), NULL);
 }
 void bios_w8(uint16 seg, uint16 ptr, uint8 val) {
-  mem_w8(SPTR2FLAT(seg, ptr), val, NULL);
+  mem_w8(LPTR2FLAT(seg, ptr), val, NULL);
 }
 void bios_w16(uint16 seg, uint16 ptr, uint16 val) {
-  mem_w16(SPTR2FLAT(seg, ptr), val, NULL);
+  mem_w16(LPTR2FLAT(seg, ptr), val, NULL);
 }
 void bios_wlp(uint16 seg, uint16 ptr, uint16 vseg, uint16 vptr) {
-  mem_w16(SPTR2FLAT(seg, ptr+0), vptr, NULL);
-  mem_w16(SPTR2FLAT(seg, ptr+2), vseg, NULL);
+  mem_w16(LPTR2FLAT(seg, ptr+0), vptr, NULL);
+  mem_w16(LPTR2FLAT(seg, ptr+2), vseg, NULL);
 }
 
 BOOL bios_ret(uint8_t code) {
@@ -36,13 +35,13 @@ BOOL bios_ret(uint8_t code) {
   }
   cpu_set_carry(TRUE);
   cpu_set_reg(CPU_REG_AW, code);
-  dbgcprint("BIOS call failure: 0x%X\n", code);
+  logerr_pc("BIOS call failure: 0x%X\n", code);
   return FALSE;
 }
 
 BOOL int_handler_fallback(uint8 irq_num, uint16 aw)
 {
-  dbgcprint("Unknown INT %02Xh: %04X\n", irq_num, aw);
+  logerr_pc("Unknown INT %02Xh: %04X\n", irq_num, aw);
   bios_ret(DOSERR_BAD_FUNC_NUM);
   return TRUE;
 }
@@ -85,6 +84,11 @@ char *bios_read_asciz(uint16 seg, uint16 ptr) {
 void bios_init(void)
 {
   bios_mem_init();
+
+  if(bios_mem_alloc(0x1000, &_bios.internal_seg)) {
+    logerr("Can't alloc BIOS internal segment.\n");
+    return;
+  }
 
   _bios.running = TRUE;
   _bios.ret_code = 0;

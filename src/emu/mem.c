@@ -104,7 +104,7 @@ uint8 mem_r8_io(uint16 addr)
   uint8 res = 0;
   // TODO: hooks
   if((int16)addr >= IORD_DBG_LO && addr <= IORD_DBG_HI)
-    dbgcprint("IORD:%02X=>%02X\n", addr, res);
+    logdbg_pc("IORD:%02X=>%02X\n", addr, res);
   return res;
 }
 uint16 mem_r16_io(uint16 addr)
@@ -117,7 +117,7 @@ uint16 mem_r16_io(uint16 addr)
 void mem_w8_io(uint16 addr, uint8 data)
 {
   if((int16)addr >= IOWR_DBG_LO && addr <= IOWR_DBG_HI)
-    dbgcprint("IOWR:%02X<=%02X\n", addr, data);
+    logdbg_pc("IOWR:%02X<=%02X\n", addr, data);
   // TODO: hooks
 }
 void mem_w16_io(uint16 addr, uint16 data)

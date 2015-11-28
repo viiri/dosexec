@@ -146,7 +146,7 @@ uint8 bios_mem_resize(uint16 size, uint16 para) {
     list->next->size -= size_diff;
     list->next->para += size_diff;
   }else if(size_diff < 0) {
-    fprintf(stderr, "DOSEXEC: Resize shrink currently unsupported!!!\n");
+    logerr_pc("DOSEXEC: Resize shrink currently unsupported!!!\n");
   }
   list->size = size;
   prv_debug("post resize");

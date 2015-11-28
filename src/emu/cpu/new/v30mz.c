@@ -149,6 +149,7 @@ void cpu_update(int32 cycles)
       _cpu.cycles = 0;
       break;
     }
+    //cpu_regdump();
     _cpu.cycles -= cpu_cycle();
   }
 }
@@ -182,19 +183,19 @@ void cpu_regdump_mask(uint32 regs)
   for(i = 0; i < 8; i++) {
     if(~regs & (1 << (i+0)))
       continue;
-    dbgxprint(DPFLG_LOGONLY, "%s: %04X  ", regname[i], _cpu.reg.r16[i]);
+    loginfo("%s: %04X  ", regname[i], _cpu.reg.r16[i]);
   }
-  dbgxprint(DPFLG_LOGONLY, "\n");
+  loginfo("\n");
   for(i = 0; i < 4; i++) {
     if(~regs & (1 << (i+8)))
       continue;
-    dbgxprint(DPFLG_LOGONLY, "%s: %04X  ", sregname[i], _cpu.reg.sreg[i]);
+    loginfo("%s: %04X  ", sregname[i], _cpu.reg.sreg[i]);
   }
-  dbgxprint(DPFLG_LOGONLY, "\n");
+  loginfo("\n");
   if(regs & (1 << 12))
-    dbgxprint(DPFLG_LOGONLY, "IP: %04X\n", _cpu.reg.ip);
+    loginfo("IP: %04X\n", _cpu.reg.ip);
   if(regs & (1 << 13))
-    dbgxprint(DPFLG_LOGONLY, "PSW:%04X\n", cpu_get_psw());
+    loginfo("PSW:%04X\n", cpu_get_psw());
 }
 void cpu_regdump(void)
 {
