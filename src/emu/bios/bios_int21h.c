@@ -343,8 +343,15 @@ static BOOL prv_int21_4300(uint8 irq_num, uint16 aw)
   dw = cpu_get_reg(CPU_REG_DW);
   char *buf = bios_read_asciz(ds, dw);
 
-  logdbg_pc("ioctl_getdevinfo(%04X:%04X[%s])\n", ds,dw, buf);
+  logdbg_pc("getfileattr(%04X:%04X[%s])\n", ds,dw, buf);
 
+  FILE *fp = fopen(buf, "rb");
+  if(fp == NULL) {
+    bios_ret(DOSERR_FILE_NOT_FOUND);
+    return TRUE;
+  }else{
+    fclose(fp);
+  }
   uint16 resp = 0x0000;
   // TODO
 
