@@ -35,7 +35,7 @@ BOOL bios_ret(uint8_t code) {
   }
   cpu_set_carry(TRUE);
   cpu_set_reg(CPU_REG_AW, code);
-  logerr_pc("BIOS call failure: 0x%X\n", code);
+  logdbg_pc("BIOS call failure: 0x%X\n", code);
   return FALSE;
 }
 
